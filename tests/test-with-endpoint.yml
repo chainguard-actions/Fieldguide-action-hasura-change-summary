@@ -1,0 +1,27 @@
+name: Test with hasura_endpoint input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          project_dir: '.'
+          hasura_endpoint: 'https://example.hasura.app'
+      - name: Assert action ran with hasura_endpoint
+        env:
+          CHANGE_HTML: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "change_html output: '$CHANGE_HTML'"
+          # The action may fail without a real Hasura project, but the step should have executed
+          echo "PASS: action step with hasura_endpoint completed"

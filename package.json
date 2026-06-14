@@ -1,0 +1,58 @@
+{
+  "name": "action-hasura-change-summary",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generate readable Hasura metadata change summaries",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "tsc",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --ext .ts",
+    "package": "ncc build --source-map --license licenses.txt",
+    "test": "jest --watch",
+    "test:ci": "jest",
+    "all": "npm run build && npm run format:check && npm run lint && npm run package && npm run test:ci"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fieldguide/action-hasura-change-summary.git"
+  },
+  "keywords": [
+    "actions",
+    "hasura",
+    "metadata",
+    "change",
+    "summary",
+    "diff"
+  ],
+  "author": "Nick Amoscato <nick@amoscato.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.8.2",
+    "@actions/github": "^5.0.3",
+    "@hasura/metadata": "^1.0.2",
+    "js-yaml": "^4.1.0",
+    "jsondiffpatch": "^0.4.1",
+    "lodash": "^4.17.21",
+    "mustache": "^4.2.0",
+    "prettier": "^2.6.2",
+    "urlcat": "^2.0.4"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.5.1",
+    "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.14.182",
+    "@types/mustache": "^4.1.2",
+    "@types/node": "^16.11.36",
+    "@typescript-eslint/parser": "^5.23.0",
+    "@vercel/ncc": "^0.33.4",
+    "eslint": "^8.15.0",
+    "eslint-plugin-github": "^4.3.6",
+    "eslint-plugin-jest": "^26.2.1",
+    "html-validate": "^7.0.0",
+    "jest": "^28.1.0",
+    "ts-jest": "^28.0.2",
+    "typescript": "^4.6.4"
+  }
+}
