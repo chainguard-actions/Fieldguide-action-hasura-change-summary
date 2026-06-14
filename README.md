@@ -9,6 +9,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
 | v2.4.1 | [`v2.4.1`](https://github.com/chainguard-actions/Fieldguide-action-hasura-change-summary/tree/v2.4.1) | [`67be333`](https://github.com/Fieldguide/action-hasura-change-summary/commit/67be33327ac5b6f63b31c3b1da3bf52ef244f3b2) |
+| v3.0.0 | [`v3.0.0`](https://github.com/chainguard-actions/Fieldguide-action-hasura-change-summary/tree/v3.0.0) | [`c0dee6e`](https://github.com/Fieldguide/action-hasura-change-summary/commit/c0dee6e23151f01f00b247fabc61512283095cbf) |
 
 ## Privacy
 
