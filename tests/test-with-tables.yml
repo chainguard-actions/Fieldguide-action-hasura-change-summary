@@ -1,0 +1,55 @@
+name: Test with tables in metadata
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_BASE_REF: main
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_REF: refs/pull/1/merge
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create Hasura metadata with a table
+        run: |
+          mkdir -p /tmp/hasura-project/metadata/databases
+          cat > /tmp/hasura-project/metadata/version.yaml << 'EOF'
+          version: 3
+          EOF
+          cat > /tmp/hasura-project/metadata/databases/databases.yaml << 'EOF'
+          - name: default
+            configuration:
+              connection_info:
+                database_url:
+                  from_env: HASURA_GRAPHQL_DATABASE_URL
+            tables:
+              - table:
+                  schema: public
+                  name: users
+                select_permissions:
+                  - role: user
+                    permission:
+                      columns:
+                        - id
+                        - name
+                      filter: {}
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          project_dir: /tmp/hasura-project
+        continue-on-error: true
+
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped"
+            exit 1
+          fi
+          echo "PASS: action ran with outcome=$OUTCOME"

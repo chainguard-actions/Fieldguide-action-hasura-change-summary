@@ -1,0 +1,20 @@
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "cSpell.words": [
+        "consts",
+        "endregion",
+        "Fieldguide",
+        "hasura",
+        "jsondiffpatch",
+        "Octokit",
+        "rowspan",
+        "todos",
+        "untracked",
+        "urlcat"
+    ],
+    "files.exclude": {
+        "dist/": true,
+        "lib/": true
+    },
+    "typescript.tsdk": "./node_modules/typescript/lib"
+}

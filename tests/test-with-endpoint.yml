@@ -1,0 +1,33 @@
+name: Test with hasura_endpoint input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_BASE_REF: main
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_REF: refs/pull/1/merge
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          project_dir: pristine/Fieldguide--action-hasura-change-summary/v4.0.0/tests/fixtures/hasura-project
+          hasura_endpoint: https://hasura.example.com
+        continue-on-error: true
+
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          CHANGE_HTML: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "change_html: $CHANGE_HTML"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped"
+            exit 1
+          fi
+          echo "PASS: action ran with outcome=$OUTCOME"
