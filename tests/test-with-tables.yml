@@ -1,55 +1,38 @@
-name: Test with tables in metadata
+name: Test with tables in new metadata
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_BASE_REF: main
-      GITHUB_EVENT_NAME: pull_request
-      GITHUB_HEAD_REF: feature-branch
-      GITHUB_REF: refs/pull/1/merge
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Create Hasura metadata with a table
-        run: |
-          mkdir -p /tmp/hasura-project/metadata/databases
-          cat > /tmp/hasura-project/metadata/version.yaml << 'EOF'
-          version: 3
-          EOF
-          cat > /tmp/hasura-project/metadata/databases/databases.yaml << 'EOF'
-          - name: default
-            configuration:
-              connection_info:
-                database_url:
-                  from_env: HASURA_GRAPHQL_DATABASE_URL
-            tables:
-              - table:
-                  schema: public
-                  name: users
-                select_permissions:
-                  - role: user
-                    permission:
-                      columns:
-                        - id
-                        - name
-                      filter: {}
-          EOF
 
       - id: action
         uses: .
         with:
-          project_dir: /tmp/hasura-project
-        continue-on-error: true
+          project_dir: tests/fixtures/hasura-v3-with-tables
 
-      - name: Assert action ran
+      - name: Assert change_html is non-empty (tables added)
         env:
-          OUTCOME: ${{ steps.action.outcome }}
+          ACTUAL: ${{ steps.action.outputs.change_html }}
         run: |
-          echo "outcome: $OUTCOME"
-          if [ "$OUTCOME" = "skipped" ]; then
-            echo "FAIL: action was skipped"
+          echo "actual: $ACTUAL"
+          NORM="$(echo "$ACTUAL" | tr -d '[:space:]')"
+          if [ -z "$NORM" ] || [ "$NORM" = "{}" ] || [ "$NORM" = "null" ] \
+             || echo "$ACTUAL" | grep -qiE 'no .*(change|diff)'; then
+            echo "FAIL: expected a change summary but got empty/no-change: $ACTUAL"
             exit 1
           fi
-          echo "PASS: action ran with outcome=$OUTCOME"
+          echo "PASS: change_html is non-empty"
+
+      - name: Assert change_html contains users table reference
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual: $ACTUAL"
+          if echo "$ACTUAL" | grep -qi "users"; then
+            echo "PASS: change_html references users table"
+          else
+            echo "FAIL: expected change_html to reference 'users' table"
+            exit 1
+          fi

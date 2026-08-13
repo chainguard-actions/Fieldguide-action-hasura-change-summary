@@ -1,0 +1,27 @@
+name: Test basic usage with empty metadata
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          project_dir: tests/fixtures/hasura-v3-empty
+
+      - name: Assert change_html is empty (no changes)
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual: $ACTUAL"
+          NORM="$(echo "$ACTUAL" | tr -d '[:space:]')"
+          if [ -z "$NORM" ] || [ "$NORM" = "{}" ] || [ "$NORM" = "null" ] \
+             || echo "$ACTUAL" | grep -qiE 'no .*(change|diff)'; then
+            echo "PASS: no changes as expected"
+          else
+            echo "FAIL: expected empty/no-change output but got: $ACTUAL"
+            exit 1
+          fi
