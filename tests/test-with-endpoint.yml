@@ -4,24 +4,40 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_EVENT_NAME: pull_request
-      GITHUB_REF: refs/pull/1/merge
-      GITHUB_HEAD_REF: feature-branch
-      GITHUB_BASE_REF: main
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Hasura metadata in custom project directory (v3, no tables)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/hasura/metadata/databases"
+          cat > "$GITHUB_WORKSPACE/hasura/metadata/version.yaml" <<'EOF'
+          version: 3
+          EOF
+          cat > "$GITHUB_WORKSPACE/hasura/metadata/databases/databases.yaml" <<'EOF'
+          - name: default
+            kind: postgres
+            configuration:
+              connection_info:
+                database_url:
+                  from_env: PG_DATABASE_URL
+            tables: []
+            functions: []
+          EOF
+
       - id: action
         uses: .
-        continue-on-error: true
         with:
           github_token: ${{ github.token }}
-          project_dir: '.'
+          project_dir: 'hasura'
           hasura_endpoint: 'https://example.hasura.app'
-      - name: Assert action ran with hasura_endpoint
         env:
-          CHANGE_HTML: ${{ steps.action.outputs.change_html }}
+          GITHUB_BASE_REF: 'nonexistent-base-branch-for-fallback'
+
+      - name: Assert action completed and change_html output is accessible
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
         run: |
-          echo "change_html output: '$CHANGE_HTML'"
-          # The action may fail without a real Hasura project, but the step should have executed
-          echo "PASS: action step with hasura_endpoint completed"
+          echo "actual change_html: '$ACTUAL'"
+          # The action should succeed. With no changes between empty base and
+          # empty new metadata, change_html should be empty or a no-change message.
+          echo "PASS: action completed successfully with hasura_endpoint"

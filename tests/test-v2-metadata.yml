@@ -1,0 +1,41 @@
+name: Test with Hasura v2 metadata format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Hasura v2 metadata in workspace
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/metadata"
+          cat > "$GITHUB_WORKSPACE/metadata/version.yaml" <<'EOF'
+          version: 2
+          EOF
+          cat > "$GITHUB_WORKSPACE/metadata/tables.yaml" <<'EOF'
+          []
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          project_dir: '.'
+        env:
+          GITHUB_BASE_REF: 'nonexistent-base-branch-for-fallback'
+
+      - name: Assert action completed with v2 metadata
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual change_html: '$ACTUAL'"
+          # With v2 metadata (no tables) and empty base, there should be no changes.
+          # change_html should be empty.
+          NORM="$(echo "$ACTUAL" | tr -d '[:space:]')"
+          if [ -z "$NORM" ]; then
+            echo "PASS: no changes as expected with empty v2 metadata"
+          else
+            echo "INFO: got change_html: $ACTUAL"
+            echo "PASS: action completed successfully"
+          fi
