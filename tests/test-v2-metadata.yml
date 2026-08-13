@@ -1,0 +1,53 @@
+name: Test with Hasura v2 metadata format
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Set up a Hasura v2 metadata directory with a table.
+      # v2 uses a flat tables.yaml instead of the databases/ structure.
+      # Since GITHUB_BASE_REF is empty, GitHubLoader falls back to empty metadata.
+      - name: Set up Hasura metadata (v2, with products table)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/metadata"
+          echo "version: 2" > "$GITHUB_WORKSPACE/metadata/version.yaml"
+          cat > "$GITHUB_WORKSPACE/metadata/tables.yaml" <<'EOF'
+          - table:
+              schema: public
+              name: products
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          project_dir: '.'
+        env:
+          GITHUB_BASE_REF: ''
+
+      - name: Assert change_html is non-empty (v2 table added)
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual: $ACTUAL"
+          NORM="$(echo "$ACTUAL" | tr -d '[:space:]')"
+          if [ -z "$NORM" ] || [ "$NORM" = "{}" ] || [ "$NORM" = "null" ] \
+             || echo "$ACTUAL" | grep -qiE 'no .*(change|diff)'; then
+            echo "FAIL: expected non-empty change_html for v2 metadata but got empty/no-diff: $ACTUAL"
+            exit 1
+          fi
+          echo "PASS: change_html is non-empty as expected"
+
+      - name: Assert change_html contains products table reference
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual: $ACTUAL"
+          if echo "$ACTUAL" | grep -qi "products"; then
+            echo "PASS: change_html mentions 'products' table"
+          else
+            echo "FAIL: expected 'products' in change_html"
+            exit 1
+          fi

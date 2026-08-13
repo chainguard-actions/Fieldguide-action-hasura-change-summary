@@ -1,0 +1,30 @@
+name: Test default project_dir behavior
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_BASE_REF: main
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_HEAD_REF: feature-branch
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          # project_dir defaults to '.' — no metadata at workspace root
+        continue-on-error: true
+
+      - name: Assert action fails gracefully with default project_dir and no metadata
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # With default project_dir='.', there is no metadata/ directory at workspace root.
+          # WorkspaceLoader will throw when trying to read version.yaml, so action should fail.
+          if [ "${{ steps.action.outcome }}" != "failure" ]; then
+            echo "FAIL: expected action to fail when no metadata exists at default project_dir"
+            exit 1
+          fi
+          echo "PASS: action correctly failed with no metadata at default project_dir"

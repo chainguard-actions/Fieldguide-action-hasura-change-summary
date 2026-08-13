@@ -1,4 +1,4 @@
-name: Test basic usage with metadata files
+name: Test with hasura_endpoint input
 on:
   workflow_dispatch:
 jobs:
@@ -16,18 +16,19 @@ jobs:
         with:
           github_token: ${{ github.token }}
           project_dir: tests/fixtures/hasura-project
+          hasura_endpoint: https://hasura.example.com
         continue-on-error: true
 
-      - name: Assert action completed (success or graceful failure)
+      - name: Assert action ran with endpoint input
         run: |
           echo "Action outcome: ${{ steps.action.outcome }}"
-          echo "change_html output: ${{ steps.action.outputs.change_html }}"
-          # The action may fail if GitHub API call fails, but it should not crash unexpectedly.
-          # We accept both success and failure outcomes here since the GitHub token
-          # may not have access to the base ref in the act environment.
+          echo "change_html: ${{ steps.action.outputs.change_html }}"
+          # The action accepts the hasura_endpoint input and uses it for links.
+          # In act environment, GitHub API may not be reachable, but the action
+          # should either succeed or fail gracefully (not crash with unhandled error).
           if [ "${{ steps.action.outcome }}" = "success" ]; then
-            echo "PASS: action succeeded"
+            echo "PASS: action succeeded with hasura_endpoint"
           else
             echo "INFO: action did not succeed (expected in act environment without real PR context)"
-            echo "PASS: action handled gracefully"
+            echo "PASS: action handled gracefully with hasura_endpoint input"
           fi

@@ -1,0 +1,38 @@
+name: Test basic usage - no changes
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Set up a minimal Hasura v3 metadata directory in the workspace root
+      # so WorkspaceLoader can read it. With no GITHUB_BASE_REF, GitHubLoader
+      # falls back to empty metadata, so there should be no changes.
+      - name: Set up Hasura metadata (v3, no tables)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/metadata/databases"
+          echo "version: 3" > "$GITHUB_WORKSPACE/metadata/version.yaml"
+          echo "[]" > "$GITHUB_WORKSPACE/metadata/databases/databases.yaml"
+
+      - id: action
+        uses: .
+        with:
+          project_dir: '.'
+        env:
+          GITHUB_BASE_REF: ''
+
+      - name: Assert change_html is empty (no changes)
+        env:
+          ACTUAL: ${{ steps.action.outputs.change_html }}
+        run: |
+          echo "actual: $ACTUAL"
+          NORM="$(echo "$ACTUAL" | tr -d '[:space:]')"
+          if [ -z "$NORM" ] || [ "$NORM" = "{}" ] || [ "$NORM" = "null" ] \
+             || echo "$ACTUAL" | grep -qiE 'no .*(change|diff)'; then
+            echo "PASS: no changes as expected"
+          else
+            echo "FAIL: expected empty/no-change output but got: $ACTUAL"
+            exit 1
+          fi

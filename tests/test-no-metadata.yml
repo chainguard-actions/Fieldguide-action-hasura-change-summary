@@ -1,0 +1,30 @@
+name: Test with missing metadata files
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_BASE_REF: main
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_HEAD_REF: feature-branch
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          github_token: ${{ github.token }}
+          project_dir: nonexistent-project-dir
+        continue-on-error: true
+
+      - name: Assert action fails gracefully when metadata is missing
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # When metadata files don't exist, WorkspaceLoader throws an error
+          # and the action should call core.setFailed (outcome = failure)
+          if [ "${{ steps.action.outcome }}" != "failure" ]; then
+            echo "FAIL: expected action to fail when metadata files are missing"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when metadata files are missing"

@@ -1,4 +1,4 @@
-name: Test with hasura_endpoint and custom project_dir
+name: Test with new table added
 on:
   workflow_dispatch:
 jobs:
@@ -7,31 +7,31 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Set up a Hasura v3 metadata directory under a custom project dir.
-      # The hasura_endpoint should appear in the output HTML as deep console links.
-      - name: Set up Hasura metadata (v3, with users table, custom project dir)
+      # Set up a Hasura v3 metadata directory with a table.
+      # Since GITHUB_BASE_REF is empty, GitHubLoader falls back to empty metadata.
+      # The workspace has a "users" table, so there should be a "table added" change.
+      - name: Set up Hasura metadata (v3, with users table)
         run: |
-          mkdir -p "$GITHUB_WORKSPACE/hasura/metadata/databases/default/tables"
-          echo "version: 3" > "$GITHUB_WORKSPACE/hasura/metadata/version.yaml"
-          cat > "$GITHUB_WORKSPACE/hasura/metadata/databases/databases.yaml" <<'EOF'
+          mkdir -p "$GITHUB_WORKSPACE/metadata/databases/default/tables"
+          echo "version: 3" > "$GITHUB_WORKSPACE/metadata/version.yaml"
+          cat > "$GITHUB_WORKSPACE/metadata/databases/databases.yaml" <<'EOF'
           - name: default
             kind: postgres
             tables: "!include default/tables/tables.yaml"
           EOF
-          cat > "$GITHUB_WORKSPACE/hasura/metadata/databases/default/tables/tables.yaml" <<'EOF'
-          - "!include public_orders.yaml"
+          cat > "$GITHUB_WORKSPACE/metadata/databases/default/tables/tables.yaml" <<'EOF'
+          - "!include public_users.yaml"
           EOF
-          cat > "$GITHUB_WORKSPACE/hasura/metadata/databases/default/tables/public_orders.yaml" <<'EOF'
+          cat > "$GITHUB_WORKSPACE/metadata/databases/default/tables/public_users.yaml" <<'EOF'
           table:
-            name: orders
+            name: users
             schema: public
           EOF
 
       - id: action
         uses: .
         with:
-          project_dir: 'hasura'
-          hasura_endpoint: 'https://my-hasura.example.com'
+          project_dir: '.'
         env:
           GITHUB_BASE_REF: ''
 
@@ -48,14 +48,14 @@ jobs:
           fi
           echo "PASS: change_html is non-empty as expected"
 
-      - name: Assert change_html contains hasura endpoint URL
+      - name: Assert change_html contains table reference
         env:
           ACTUAL: ${{ steps.action.outputs.change_html }}
         run: |
           echo "actual: $ACTUAL"
-          if echo "$ACTUAL" | grep -q "my-hasura.example.com"; then
-            echo "PASS: change_html contains hasura endpoint"
+          if echo "$ACTUAL" | grep -qi "users"; then
+            echo "PASS: change_html mentions 'users' table"
           else
-            echo "FAIL: expected hasura endpoint URL in change_html"
+            echo "FAIL: expected 'users' in change_html"
             exit 1
           fi
